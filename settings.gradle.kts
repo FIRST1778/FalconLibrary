@@ -7,4 +7,7 @@
  */
 
 rootProject.name = "FalconLibrary"
-include("core", "wpi", "vendorCTRE", "vendorREV", "vendorNAVX", "vendorCU", "vendorPWF")
+include("core", "wpi", "vendorCTRE", "vendorREV", "vendorNAVX", "vendorPWF")
+include("advantageKit")
+include("pathPlanner")
+include("mixedVendors")

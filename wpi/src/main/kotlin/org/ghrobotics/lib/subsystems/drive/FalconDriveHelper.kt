@@ -8,8 +8,13 @@
 
 package org.ghrobotics.lib.subsystems.drive
 
+import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.math.kinematics.ChassisSpeeds
+import edu.wpi.first.wpilibj.RobotBase
+import org.ghrobotics.lib.mathematics.max
+import org.ghrobotics.lib.subsystems.drive.swerve.FalconSwerveDrivetrain
+import kotlin.math.abs
 import kotlin.math.absoluteValue
-import kotlin.math.max
 import kotlin.math.withSign
 
 /**
@@ -27,10 +32,9 @@ class FalconDriveHelper {
      */
     fun arcadeDrive(
         linearPercent: Double,
-        rotationPercent: Double
+        rotationPercent: Double,
     ): Pair<Double, Double> {
-        val maxInput = max(linearPercent.absoluteValue, rotationPercent.absoluteValue)
-            .withSign(linearPercent)
+        val maxInput = max(linearPercent.absoluteValue, rotationPercent.absoluteValue).withSign(linearPercent)
 
         val leftMotorOutput: Double
         val rightMotorOutput: Double
@@ -68,16 +72,19 @@ class FalconDriveHelper {
     fun curvatureDrive(
         linearPercent: Double,
         curvaturePercent: Double,
-        isQuickTurn: Boolean
+        isQuickTurn: Boolean,
     ): Pair<Double, Double> {
         val angularPower: Double
         val overPower: Boolean
 
         if (isQuickTurn) {
-//            if (linearPercent.absoluteValue < kQuickStopThreshold) {
-//                quickStopAccumulator = (1 - kQuickStopAlpha) * quickStopAccumulator +
-//                    kQuickStopAlpha * curvaturePercent.coerceIn(-1.0, 1.0) * 2.0
-//            }
+            if (linearPercent.absoluteValue < kQuickStopThreshold) {
+                quickStopAccumulator =
+                    (1 - kQuickStopAlpha) * quickStopAccumulator + kQuickStopAlpha * curvaturePercent.coerceIn(
+                        -1.0,
+                        1.0,
+                    ) * 2.0
+            }
             overPower = true
             angularPower = curvaturePercent
         } else {
@@ -101,14 +108,17 @@ class FalconDriveHelper {
                     rightMotorOutput -= leftMotorOutput - 1.0
                     leftMotorOutput = 1.0
                 }
+
                 rightMotorOutput > 1.0 -> {
                     leftMotorOutput -= rightMotorOutput - 1.0
                     rightMotorOutput = 1.0
                 }
+
                 leftMotorOutput < -1.0 -> {
                     rightMotorOutput -= leftMotorOutput + 1.0
                     leftMotorOutput = -1.0
                 }
+
                 rightMotorOutput < -1.0 -> {
                     leftMotorOutput -= rightMotorOutput + 1.0
                     rightMotorOutput = -1.0
@@ -126,8 +136,47 @@ class FalconDriveHelper {
         return Pair(leftMotorOutput, rightMotorOutput)
     }
 
-//    companion object {
-//        const val kQuickStopThreshold = DifferentialDrive.kDefaultQuickStopThreshold
-//        const val kQuickStopAlpha = DifferentialDrive.kDefaultQuickStopAlpha
-//    }
+    fun swerveDrive(
+        drivetrain: FalconSwerveDrivetrain,
+        vx: Double,
+        vy: Double,
+        rotationInput: Double,
+        fieldRelative: Boolean = true,
+        clampAcceleration: Boolean = false,
+    ): ChassisSpeeds {
+        // Get Current Robot Speed
+        val currentChassisSpeeds = drivetrain.kinematics.toChassisSpeeds(
+            *drivetrain.swerveDriveIO.states,
+        )
+        return ChassisSpeeds.fromFieldRelativeSpeeds(
+            if (clampAcceleration && abs(vx - currentChassisSpeeds.vxMetersPerSecond) > kMaxAcceleration) {
+                (
+                    currentChassisSpeeds.vxMetersPerSecond + kMaxAcceleration.withSign(
+                        vx - currentChassisSpeeds.vxMetersPerSecond,
+                    )
+                    )
+            } else {
+                vx
+            },
+            if (clampAcceleration && abs(vy - currentChassisSpeeds.vyMetersPerSecond) > kMaxAcceleration) {
+                (
+                    currentChassisSpeeds.vyMetersPerSecond + kMaxAcceleration.withSign(
+                        vy - currentChassisSpeeds.vyMetersPerSecond,
+                    )
+                    )
+            } else {
+                vy
+            },
+            rotationInput,
+            if (RobotBase.isReal()) {
+                drivetrain.robotPosition.rotation
+            } else Rotation2d.fromDegrees(0.0),
+        )
+    }
+
+    companion object {
+        const val kQuickStopThreshold = 0.2
+        const val kQuickStopAlpha = 0.1
+        const val kMaxAcceleration = 3.5 / 50 // m/s scaled for periodic update rate
+    }
 }

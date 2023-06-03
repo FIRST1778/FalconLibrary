@@ -8,12 +8,9 @@
 
 package org.ghrobotics.lib.motors.rev
 
-import com.revrobotics.AlternateEncoderType
-import com.revrobotics.CANPIDController
 import com.revrobotics.CANSparkMax
 import com.revrobotics.CANSparkMaxLowLevel
-import com.revrobotics.ControlType
-import kotlin.properties.Delegates
+import com.revrobotics.SparkMaxPIDController
 import org.ghrobotics.lib.mathematics.units.Ampere
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
@@ -26,6 +23,7 @@ import org.ghrobotics.lib.mathematics.units.inAmps
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.motors.AbstractFalconMotor
 import org.ghrobotics.lib.motors.FalconMotor
+import kotlin.properties.Delegates
 
 /**
  * Creates a Spark MAX motor controller. The alternate encoder CPR is defaulted
@@ -40,7 +38,7 @@ class FalconMAX<K : SIKey>(
     val canSparkMax: CANSparkMax,
     private val model: NativeUnitModel<K>,
     useAlternateEncoder: Boolean = false,
-    alternateEncoderCPR: Int = 8192
+    alternateEncoderCPR: Int = 8192,
 ) : AbstractFalconMotor<K>() {
 
     /**
@@ -57,25 +55,30 @@ class FalconMAX<K : SIKey>(
         type: CANSparkMaxLowLevel.MotorType,
         model: NativeUnitModel<K>,
         useAlternateEncoder: Boolean = false,
-        alternateEncoderCPR: Int = 8196
+        alternateEncoderCPR: Int = 8196,
     ) : this(
-        CANSparkMax(id, type), model, useAlternateEncoder, alternateEncoderCPR
+        CANSparkMax(id, type),
+        model,
+        useAlternateEncoder,
+        alternateEncoderCPR,
     )
 
     /**
      * The PID controller for the Spark MAX.
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val controller: CANPIDController = canSparkMax.pidController
+    val controller: SparkMaxPIDController = canSparkMax.pidController
 
     /**
      * The encoder for the Spark MAX.
      */
     override val encoder = FalconMAXEncoder(
-        if (useAlternateEncoder) canSparkMax.getAlternateEncoder(
-            AlternateEncoderType.kQuadrature,
-            alternateEncoderCPR
-        ) else canSparkMax.encoder, model
+        if (useAlternateEncoder) {
+            canSparkMax.getAlternateEncoder(
+                alternateEncoderCPR,
+            )
+        } else canSparkMax.encoder,
+        model,
     )
 
     /**
@@ -139,8 +142,9 @@ class FalconMAX<K : SIKey>(
      * Configures the forward soft limit and enables it.
      */
     override var softLimitForward: SIUnit<K> by Delegates.observable(SIUnit(0.0)) { _, _, newValue ->
-        canSparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward,
-            model.toNativeUnitPosition(newValue).value.toFloat()
+        canSparkMax.setSoftLimit(
+            CANSparkMax.SoftLimitDirection.kForward,
+            model.toNativeUnitPosition(newValue).value.toFloat(),
         )
         canSparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true)
     }
@@ -156,8 +160,9 @@ class FalconMAX<K : SIKey>(
      * Configures the reverse soft limit and enables it.
      */
     override var softLimitReverse: SIUnit<K> by Delegates.observable(SIUnit(0.0)) { _, _, newValue ->
-        canSparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse,
-            model.toNativeUnitPosition(newValue).value.toFloat()
+        canSparkMax.setSoftLimit(
+            CANSparkMax.SoftLimitDirection.kReverse,
+            model.toNativeUnitPosition(newValue).value.toFloat(),
         )
         canSparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, true)
     }
@@ -169,7 +174,7 @@ class FalconMAX<K : SIKey>(
      * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
      */
     override fun setVoltage(voltage: SIUnit<Volt>, arbitraryFeedForward: SIUnit<Volt>) {
-        controller.setReference(voltage.value, ControlType.kVoltage, 0, arbitraryFeedForward.value)
+        controller.setReference(voltage.value, CANSparkMax.ControlType.kVoltage, 0, arbitraryFeedForward.value)
     }
 
     /**
@@ -179,7 +184,7 @@ class FalconMAX<K : SIKey>(
      * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
      */
     override fun setDutyCycle(dutyCycle: Double, arbitraryFeedForward: SIUnit<Volt>) {
-        controller.setReference(dutyCycle, ControlType.kDutyCycle, 0, arbitraryFeedForward.value)
+        controller.setReference(dutyCycle, CANSparkMax.ControlType.kDutyCycle, 0, arbitraryFeedForward.value)
     }
 
     /**
@@ -191,7 +196,9 @@ class FalconMAX<K : SIKey>(
     override fun setVelocity(velocity: SIUnit<Velocity<K>>, arbitraryFeedForward: SIUnit<Volt>) {
         controller.setReference(
             model.toNativeUnitVelocity(velocity).value * 60,
-            ControlType.kVelocity, 0, arbitraryFeedForward.value
+            CANSparkMax.ControlType.kVelocity,
+            0,
+            arbitraryFeedForward.value,
         )
     }
 
@@ -205,8 +212,9 @@ class FalconMAX<K : SIKey>(
     override fun setPosition(position: SIUnit<K>, arbitraryFeedForward: SIUnit<Volt>) {
         controller.setReference(
             model.toNativeUnitPosition(position).value,
-            if (useMotionProfileForPosition) ControlType.kSmartMotion else ControlType.kPosition,
-            0, arbitraryFeedForward.value
+            if (useMotionProfileForPosition) CANSparkMax.ControlType.kSmartMotion else CANSparkMax.ControlType.kPosition,
+            0,
+            arbitraryFeedForward.value,
         )
     }
 
@@ -234,7 +242,7 @@ fun <K : SIKey> falconMAX(
     model: NativeUnitModel<K>,
     useAlternateEncoder: Boolean = false,
     alternateEncoderCPR: Int = 8192,
-    block: FalconMAX<K>.() -> Unit
+    block: FalconMAX<K>.() -> Unit,
 ) = FalconMAX(canSparkMax, model, useAlternateEncoder, alternateEncoderCPR).also(block)
 
 fun <K : SIKey> falconMAX(
@@ -243,5 +251,5 @@ fun <K : SIKey> falconMAX(
     model: NativeUnitModel<K>,
     useAlternateEncoder: Boolean = false,
     alternateEncoderCPR: Int = 8192,
-    block: FalconMAX<K>.() -> Unit
+    block: FalconMAX<K>.() -> Unit,
 ) = FalconMAX(id, type, model, useAlternateEncoder, alternateEncoderCPR).also(block)

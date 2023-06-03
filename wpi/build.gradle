@@ -8,7 +8,16 @@
 
 dependencies {
     api project(":core")
+    api project(":pathPlanner")
     api wpi.java.deps.wpilib()
     api wpi.java.vendor.java()
     api "com.github.salomonbrys.kotson:kotson:2.5.0"
+}
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+
 }

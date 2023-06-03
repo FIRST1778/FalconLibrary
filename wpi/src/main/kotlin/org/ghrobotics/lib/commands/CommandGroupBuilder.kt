@@ -9,15 +9,15 @@
 package org.ghrobotics.lib.commands
 
 import edu.wpi.first.wpilibj2.command.Command
-import edu.wpi.first.wpilibj2.command.CommandGroupBase
+import edu.wpi.first.wpilibj2.command.CommandBase
 import edu.wpi.first.wpilibj2.command.ConditionalCommand
 import edu.wpi.first.wpilibj2.command.InstantCommand
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup
-import java.util.function.BooleanSupplier
 import org.ghrobotics.lib.utils.Source
+import java.util.function.BooleanSupplier
 
 fun sequential(block: BasicCommandGroupBuilder.() -> Unit) =
     commandGroup(BasicCommandGroupBuilder.Type.Sequential, block)
@@ -41,7 +41,7 @@ private fun parallelDeadlineGroup(deadline: Command, block: ParallelDeadlineGrou
     ParallelDeadlineGroupBuilder(deadline).apply(block).build()
 
 interface CommandGroupBuilder {
-    fun build(): CommandGroupBase
+    fun build(): CommandBase
 }
 
 class BasicCommandGroupBuilder(private val type: Type) : CommandGroupBuilder {
@@ -50,7 +50,7 @@ class BasicCommandGroupBuilder(private val type: Type) : CommandGroupBuilder {
 
     operator fun Command.unaryPlus() = commands.add(this)
 
-    override fun build(): CommandGroupBase {
+    override fun build(): CommandBase {
         return when (type) {
             Type.Sequential -> SequentialCommandGroup(*commands.toTypedArray())
             Type.Parallel -> ParallelCommandGroup(*commands.toTypedArray())
@@ -92,8 +92,8 @@ class StateCommandGroupBuilder<T>(private val state: Source<T>) :
         SequentialCommandGroup(
             *stateMap.entries.map { (key, command) ->
                 ConditionalCommand(command, InstantCommand(), BooleanSupplier { state() == key })
-            }.toTypedArray()
+            }.toTypedArray(),
         )
 }
 
-infix fun CommandGroupBase.S3ND(other: Any) = this.schedule()
+infix fun CommandBase.S3ND(other: Any) = this.schedule()

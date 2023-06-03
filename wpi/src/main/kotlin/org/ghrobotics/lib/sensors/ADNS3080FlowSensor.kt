@@ -11,14 +11,13 @@ package org.ghrobotics.lib.sensors
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.geometry.Translation2d
 import edu.wpi.first.wpilibj.SPI
-import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.ghrobotics.lib.mathematics.twodim.geometry.Translation2d
 import org.ghrobotics.lib.mathematics.units.feet
 import org.ghrobotics.lib.utils.Source
+import kotlin.coroutines.CoroutineContext
 
 /**
  *  Implementation of the ADNS3080 Optical Flow Sensor connected over SPI
@@ -31,7 +30,7 @@ class ADNS3080FlowSensor(
     private val port: SPI.Port,
     private val ticksPerFoot: Double,
     private val rotation2d: Rotation2d,
-    parent: CoroutineContext
+    parent: CoroutineContext,
 ) : Source<Translation2d> {
 
     private val job = Job(parent[Job])
@@ -49,7 +48,6 @@ class ADNS3080FlowSensor(
         scope.launch {
             val spi = SPI(port)
             spi.setChipSelectActiveLow()
-            spi.setClockActiveHigh()
             spi.setClockRate(500000)
 
             while (isActive) {
@@ -75,7 +73,7 @@ class ADNS3080FlowSensor(
         return dataReceived[0]
     }
 
-    override fun invoke() = Translation2d(accumX.feet, accumY.feet).rotateBy(rotation2d)
+    override fun invoke() = Translation2d(accumX.feet.value, accumY.feet.value).rotateBy(rotation2d)
 
     fun free() {
         job.cancel()

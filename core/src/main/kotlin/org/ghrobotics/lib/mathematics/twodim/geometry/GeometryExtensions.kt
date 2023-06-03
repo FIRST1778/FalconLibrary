@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.geometry.Translation2d
 import edu.wpi.first.math.geometry.Twist2d
-import kotlin.math.absoluteValue
 import org.ghrobotics.lib.mathematics.kEpsilon
 import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIUnit
@@ -22,6 +21,7 @@ import org.ghrobotics.lib.mathematics.units.derived.Radian
 import org.ghrobotics.lib.mathematics.units.derived.degrees
 import org.ghrobotics.lib.mathematics.units.derived.toRotation2d
 import org.ghrobotics.lib.mathematics.units.meters
+import kotlin.math.absoluteValue
 
 /* Translation2d Unit-Safe Constructors */
 
@@ -47,18 +47,6 @@ fun Transform2d(x: SIUnit<Meter>, y: SIUnit<Meter>, angle: Rotation2d) =
 val Translation2d.x_u get() = x.meters
 val Translation2d.y_u get() = y.meters
 
-/* Interpolation */
-fun Pose2d.interpolate(endValue: Pose2d, t: Double): Pose2d {
-    return if (t < 0) {
-        this
-    } else if (t >= 1) {
-        endValue
-    } else {
-        val twist = (endValue.relativeTo(this)).log()
-        exp(twist * t)
-    }
-}
-
 /* Misc Extensions */
 fun Pose2d.mirror() =
     Pose2d(translation.x, 8.2296 - translation.y, -rotation)
@@ -76,8 +64,8 @@ fun Pose2d.log(): Twist2d {
     val translationPart = translation.rotateBy(
         Rotation2d(
             halfThetaByTanOfHalfDTheta,
-            -halfDTheta
-        )
+            -halfDTheta,
+        ),
     )
     return Twist2d(translationPart.x, translationPart.y, dtheta)
 }
