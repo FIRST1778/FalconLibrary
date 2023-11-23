@@ -8,34 +8,29 @@
 
 package org.ghrobotics.lib.subsystems.drive.swerve
 
+import com.pathplanner.lib.commands.FollowPathCommand
+import com.pathplanner.lib.commands.PathfindThenFollowPathHolonomic
+import com.pathplanner.lib.path.GoalEndState
+import com.pathplanner.lib.path.PathPlannerPath
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig
+import com.pathplanner.lib.util.ReplanningConfig
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.math.kinematics.ChassisSpeeds
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.math.trajectory.Trajectory
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard
 import edu.wpi.first.wpilibj.smartdashboard.Field2d
-import org.ghrobotics.lib.mathematics.units.Ampere
 import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIUnit
-import org.ghrobotics.lib.mathematics.units.derived.LinearVelocity
-import org.ghrobotics.lib.mathematics.units.derived.Radian
 import org.ghrobotics.lib.mathematics.units.derived.Velocity
-import org.ghrobotics.lib.mathematics.units.derived.Volt
 import org.ghrobotics.lib.subsystems.SensorlessCompatibleSubsystem
 import org.ghrobotics.lib.subsystems.drive.FalconDriveHelper
 import org.ghrobotics.lib.utils.Source
 
-abstract class FalconSwerveDrivetrain :
-    TrajectoryTrackerSwerveDriveBase(),
-    SensorlessCompatibleSubsystem {
-    /**
-     * The current inputs and outputs
-     */
-    abstract val swerveDriveIO: SwerveDriveIO
-    abstract val abstractSwerveDriveInputs: AbstractSwerveDriveInputs
-
+abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), SensorlessCompatibleSubsystem {
     /**
      * Helper for different drive styles.
      */
@@ -49,15 +44,31 @@ abstract class FalconSwerveDrivetrain :
 
     abstract val motorOutputLimiter: Source<Double>
 
-    /**
-     * Get the robot's position on the field. Up to the user to update the position.
-     */
-    override var robotPosition: Pose2d = Pose2d()
 
     val field = Field2d()
     private val fieldTab = Shuffleboard.getTab("Field")
 
     abstract fun resetPosition(pose: Pose2d, positions: Array<SwerveModulePosition>)
+
+    fun navigateToPose(pose: Pose2d) = PathfindThenFollowPathHolonomic(
+        PathPlannerPath(PathPlannerPath.bezierFromPoses(pose), pathConstraints, GoalEndState(0.0, pose.rotation)),
+        pathConstraints,
+        swerveDriveInputs::robotPose,
+        swerveDriveInputs::chassisSpeeds,
+        ::setOutputSI,
+        pathFollowingConfig,
+        this
+    )
+
+    fun follow(path: PathPlannerPath) = FollowPathCommand(
+        path,
+        swerveDriveInputs::robotPose,
+        swerveDriveInputs::chassisSpeeds,
+        ::setOutputSI,
+        controller,
+        ReplanningConfig(),
+        this
+    )
 
     fun resetPosition(newPose: Pose2d) {
         resetPosition(newPose, swerveDriveIO.positions)
@@ -85,6 +96,13 @@ abstract class FalconSwerveDrivetrain :
         swerveDriveIO.setModuleStates(states)
     }
 
+    override fun setOutputSI(speeds: ChassisSpeeds) {
+        kinematics.toSwerveModuleStates(speeds).let {
+            SwerveDriveKinematics.desaturateWheelSpeeds(it, maxSpeed.value)
+            swerveDriveIO.setModuleStates(it)
+        }
+    }
+
     fun swerveDrive(forwardInput: Double, strafeInput: Double, rotationInput: Double, fieldRelative: Boolean = true) {
         val outputLimiter = motorOutputLimiter()
         val speeds = driveHelper.swerveDrive(
@@ -106,51 +124,4 @@ abstract class FalconSwerveDrivetrain :
                 Rotation2d(this[it].encoder.absolutePosition.value),
             )
         }
-}
-
-interface SwerveDriveIO {
-
-    fun <T : AbstractSwerveDriveInputs> updateInputs(inputs: T)
-    fun setModuleStates(states: Array<SwerveModuleState>)
-    fun setNeutral()
-
-    val positions: Array<SwerveModulePosition>
-
-    val states: Array<SwerveModuleState>
-
-    val gyro: Source<Rotation2d>
-}
-
-interface AbstractSwerveDriveInputs {
-    var leftFrontVoltage: SIUnit<Volt>
-    var rightFrontVoltage: SIUnit<Volt>
-    var rightBackVoltage: SIUnit<Volt>
-    var leftBackVoltage: SIUnit<Volt>
-
-    var leftFrontCurrent: SIUnit<Ampere>
-    var rightFrontCurrent: SIUnit<Ampere>
-    var rightBackCurrent: SIUnit<Ampere>
-    var leftBackCurrent: SIUnit<Ampere>
-
-    var leftFrontPosition: SIUnit<Meter>
-    var rightFrontPosition: SIUnit<Meter>
-    var rightBackPosition: SIUnit<Meter>
-    var leftBackPosition: SIUnit<Meter>
-
-    var leftFrontRotation: SIUnit<Radian>
-    var rightFrontRotation: SIUnit<Radian>
-    var rightBackRotation: SIUnit<Radian>
-    var leftBackRotation: SIUnit<Radian>
-
-    var leftFrontVelocity: SIUnit<LinearVelocity>
-    var rightFrontVelocity: SIUnit<LinearVelocity>
-    var rightBackVelocity: SIUnit<LinearVelocity>
-    var leftBackVelocity: SIUnit<LinearVelocity>
-
-    var leftFrontFeedforward: SIUnit<Volt>
-    var rightFrontFeedforward: SIUnit<Volt>
-    var rightBackFeedforward: SIUnit<Volt>
-    var leftBackFeedforward: SIUnit<Volt>
-
-    var gyroRaw: SIUnit<Radian>
 }
