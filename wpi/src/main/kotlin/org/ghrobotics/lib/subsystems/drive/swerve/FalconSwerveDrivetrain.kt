@@ -8,7 +8,6 @@
 
 package org.ghrobotics.lib.subsystems.drive.swerve
 
-import com.pathplanner.lib.PathPlannerTrajectory
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics
@@ -17,8 +16,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.math.trajectory.Trajectory
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard
 import edu.wpi.first.wpilibj.smartdashboard.Field2d
-import edu.wpi.first.wpilibj2.command.Command
-import org.ghrobotics.lib.mathematics.twodim.trajectory.mirror
 import org.ghrobotics.lib.mathematics.units.Ampere
 import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIUnit
@@ -101,21 +98,6 @@ abstract class FalconSwerveDrivetrain :
         SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed.value)
         swerveDriveIO.setModuleStates(states)
     }
-
-    fun followTrajectory(trajectory: PathPlannerTrajectory, mirrored: Boolean = false) = SwerveTrajectoryTrackerCommand(
-        this,
-        Source((if (mirrored) trajectory.mirror() else trajectory) as PathPlannerTrajectory),
-    )
-
-    fun followTrajectory(trajectory: Source<PathPlannerTrajectory>) = SwerveTrajectoryTrackerCommand(this, trajectory)
-
-    fun followTrajectoryWithCommands(trajectory: PathPlannerTrajectory, eventMap: HashMap<String, Command>) =
-        SwerveTrajectoryTrackerWithMarkersCommand(this, trajectory, eventMap)
-
-    fun followTrajectoryGroupWithCommands(
-        trajectories: List<PathPlannerTrajectory>,
-        eventMap: HashMap<String, Command>,
-    ) = SwerveTrajectoryGroupTrackerCommand(this, trajectories, eventMap)
 
     val List<AbstractFalconSwerveModule<*, *>>.positions: List<SwerveModulePosition>
         get() = List(4) {

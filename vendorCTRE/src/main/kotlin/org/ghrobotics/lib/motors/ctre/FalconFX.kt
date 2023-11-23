@@ -8,17 +8,33 @@
 
 package org.ghrobotics.lib.motors.ctre
 
-import com.ctre.phoenix.motorcontrol.MotorCommutation
-import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration
-import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice
-import com.ctre.phoenix.motorcontrol.can.TalonFX
-import com.ctre.phoenix.sensors.SensorInitializationStrategy
+import com.ctre.phoenix6.configs.FeedbackConfigs
+import com.ctre.phoenix6.configs.TalonFXConfiguration
+import com.ctre.phoenix6.configs.TalonFXConfigurator
+import com.ctre.phoenix6.configs.VoltageConfigs
+import com.ctre.phoenix6.controls.CoastOut
+import com.ctre.phoenix6.controls.ControlRequest
+import com.ctre.phoenix6.controls.DutyCycleOut
+import com.ctre.phoenix6.controls.Follower
+import com.ctre.phoenix6.controls.PositionVoltage
+import com.ctre.phoenix6.controls.StaticBrake
+import com.ctre.phoenix6.controls.StrictFollower
+import com.ctre.phoenix6.controls.VelocityVoltage
+import com.ctre.phoenix6.controls.VoltageOut
+import com.ctre.phoenix6.hardware.TalonFX
+import com.ctre.phoenix6.signals.NeutralModeValue
 import org.ghrobotics.lib.mathematics.units.Ampere
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.amps
+import org.ghrobotics.lib.mathematics.units.derived.Acceleration
+import org.ghrobotics.lib.mathematics.units.derived.Velocity
+import org.ghrobotics.lib.mathematics.units.derived.Volt
+import org.ghrobotics.lib.mathematics.units.derived.volts
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
+import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
+import org.ghrobotics.lib.motors.AbstractFalconMotor
+import org.ghrobotics.lib.motors.FalconMotor
 import kotlin.properties.Delegates
 
 /**
@@ -31,7 +47,7 @@ import kotlin.properties.Delegates
 class FalconFX<K : SIKey>(
     @Suppress("MemberVisibilityCanBePrivate") val talonFX: TalonFX,
     model: NativeUnitModel<K>,
-) : FalconCTRE<K>(talonFX, model) {
+) : AbstractFalconMotor<K>() {
 
     /**
      * Alternate constructor where users can supply ID and native unit model.
@@ -41,63 +57,186 @@ class FalconFX<K : SIKey>(
      */
     constructor(id: Int, model: NativeUnitModel<K>) : this(TalonFX(id), model)
 
+    val configurator: TalonFXConfigurator get() = talonFX.configurator
+
+    fun updateConfigs(block: TalonFXConfigurator.() -> Unit) = configurator.apply(block)
+
     /**
      * Configures the feedback device for the motor controller.
      */
-    var feedbackDevice by Delegates.observable(TalonFXFeedbackDevice.IntegratedSensor) { _, _, newValue ->
-        talonFX.configSelectedFeedbackSensor(newValue, 0, 0)
+    var feedbackDevice by Delegates.observable(FeedbackConfigs()) { _, _, newValue ->
+        talonFX.configurator.apply(newValue)
     }
 
-    /**
-     * Configures the motor commutation type for the Falcon 500.
-     */
-    var motorCommutation by Delegates.observable(MotorCommutation.Trapezoidal) { _, _, newValue ->
-        talonFX.configMotorCommutation(newValue, 0)
+    var motorInverted by Delegates.observable(false) { _, _, newValue ->
+        talonFX.inverted = newValue
     }
 
-    /**
-     * Configures the sensor initialization strategy for the motor controller. This can be used
-     * to set whether the sensor starts at zero or to the position reported by the absolute encoder.
-     * The latter is useful for mechanisms such as swerve drives or turrets where initial absolute
-     * positioning is needed, but relative mode is used after boot.
-     */
-    var sensorInitializerStrategy by Delegates.observable(SensorInitializationStrategy.BootToZero) { _, _, newValue ->
-        talonFX.configIntegratedSensorInitializationStrategy(newValue, 0)
+    override var brakeMode by Delegates.observable(false) { _, _, newValue ->
+        talonFX.setNeutralMode(if (newValue) NeutralModeValue.Brake else NeutralModeValue.Coast)
     }
+    override var voltageCompSaturation: SIUnit<Volt> by Delegates.observable(12.volts) { _, _, newValue ->
+        talonFX.configurator.apply(
+            VoltageConfigs().withPeakForwardVoltage(newValue.value).withPeakReverseVoltage(-newValue.value),
+        )
+    }
+
+    @Deprecated("Use UpdateConfigs instead with MotionMagicConfigs")
+    override var motionProfileCruiseVelocity: SIUnit<Velocity<K>>
+        get() = TODO("Deprecated")
+        set(value) = TODO("Deprecated")
+
+    @Deprecated("Use UpdateConfigs instead with SoftwareLimitSwitchConfigs")
+    override var motionProfileAcceleration: SIUnit<Acceleration<K>>
+        get() = TODO("Deprecated")
+        set(value) = TODO("Deprecated")
+
+    @Deprecated("Use UpdateConfigs instead with SoftwareLimitSwitchConfigs")
+    override var softLimitForward: SIUnit<K>
+        get() = TODO("Deprecated")
+        set(value) = TODO("Deprecated")
+
+    @Deprecated("Use UpdateConfigs instead with MotionMagicConfigs")
+    override var softLimitReverse: SIUnit<K>
+        get() = TODO("Deprecated")
+        set(value) = TODO("Deprecated")
 
     /**
      * Returns the current drawn by the motor.
      */
     override val drawnCurrent: SIUnit<Ampere>
-        get() = talonFX.supplyCurrent.amps
+        get() = talonFX.supplyCurrent.value.amps
+    override var outputInverted: Boolean
+        get() = TODO("Not yet implemented")
+        set(value) {}
 
     /**
-     * Configures the supply-side current limit for the motor.
-     *
-     * @param config The supply-side current limit configuration.
+     * The previous demand.
      */
-    fun configSupplyCurrentLimit(config: SupplyCurrentLimitConfiguration) {
-        talonFX.configSupplyCurrentLimit(config, 0)
+    private var lastRequest: ControlRequest = if (brakeMode) StaticBrake() else CoastOut()
+
+    /**
+     * The encoder (if any) that is connected to the motor controller.
+     */
+    override val encoder = FalconCTREEncoder(talonFX, model)
+
+    /**
+     * Returns the voltage across the motor windings.
+     */
+    override val voltageOutput: SIUnit<Volt>
+        get() = talonFX.motorVoltage.value.volts
+
+    /**
+     * Constructor that enables voltage compensation on the motor controllers by default.
+     */
+    init {
+        talonFX.configurator.apply {
+            apply(VoltageConfigs().withPeakForwardVoltage(12.0).withPeakReverseVoltage(-12.0))
+            apply(FeedbackConfigs().withRotorToSensorRatio(model.fromNativeUnitPosition(1.0.nativeUnits).value))
+        }
     }
 
     /**
-     * Configures the current limit for the stator of the motor.
+     * Sets a certain voltage across the motor windings.
      *
-     * @param config The stator current limit configuration.
+     * @param voltage The voltage to set.
+     * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
      */
-    fun configStatorCurrentLimit(config: StatorCurrentLimitConfiguration) {
-        talonFX.configStatorCurrentLimit(config, 0)
+    override fun setVoltage(voltage: SIUnit<Volt>, arbitraryFeedForward: SIUnit<Volt>) = sendRequest(
+        VoltageOut(voltage.value + arbitraryFeedForward.value),
+    )
+
+    /**
+     * Commands a certain duty cycle to the motor.
+     *
+     * @param dutyCycle The duty cycle to command.
+     * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
+     */
+    override fun setDutyCycle(dutyCycle: Double, arbitraryFeedForward: SIUnit<Volt>) = sendRequest(
+        DutyCycleOut(dutyCycle + arbitraryFeedForward.value / voltageCompSaturation.value),
+    )
+
+    /**
+     * Sets the velocity setpoint of the motor controller.
+     *
+     * @param velocity The velocity setpoint.
+     * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
+     */
+    override fun setVelocity(velocity: SIUnit<Velocity<K>>, arbitraryFeedForward: SIUnit<Volt>) = sendRequest(
+        VelocityVoltage(velocity.value).withFeedForward(arbitraryFeedForward.value).withEnableFOC(false),
+    )
+
+    /**
+     * Sets the position setpoint of the motor controller. This uses a motion profile
+     * if motion profiling is configured.
+     *
+     * @param position The position setpoint.
+     * @param arbitraryFeedForward The arbitrary feedforward to add to the motor output.
+     */
+    override fun setPosition(position: SIUnit<K>, arbitraryFeedForward: SIUnit<Volt>) = sendRequest(
+        PositionVoltage(position.value).withFeedForward(arbitraryFeedForward.value).withEnableFOC(false),
+    )
+
+    /**
+     * Gives the motor neutral output.
+     */
+    override fun setNeutral() = sendRequest(
+        if (brakeMode) StaticBrake() else CoastOut(),
+    )
+
+    /**
+     * Sends the demand to the motor controller.
+     *
+     * @param request The demand to send.
+     */
+    private fun sendRequest(request: ControlRequest) {
+        if (request != lastRequest) {
+            talonFX.setControl(request)
+            lastRequest = request
+        }
+    }
+
+    /**
+     * Follows the output of another motor controller.
+     *
+     * @param motor The other motor controller.
+     */
+    override fun follow(motor: FalconMotor<*>): Boolean = if (motor is FalconFX<*>) {
+        talonFX.setControl(StrictFollower(motor.talonFX.deviceID))
+        true
+    } else {
+        super.follow(motor)
+    }
+
+    fun follow(motor: FalconMotor<*>, invert: Boolean): Boolean = if (motor is FalconFX<*>) {
+        talonFX.setControl(Follower(motor.talonFX.deviceID, invert))
+        true
+    } else {
+        super.follow(motor)
     }
 }
 
 fun <K : SIKey> falconFX(
     talonFX: TalonFX,
     model: NativeUnitModel<K>,
-    block: FalconFX<K>.() -> Unit,
-) = FalconFX(talonFX, model).also(block)
+    block: TalonFXConfiguration.() -> Unit,
+) = FalconFX(talonFX, model).also {
+    it.configurator.apply(TalonFXConfiguration().apply(block))
+}
 
 fun <K : SIKey> falconFX(
     id: Int,
     model: NativeUnitModel<K>,
+    block: TalonFXConfiguration.() -> Unit,
+) = FalconFX(id, model).also {
+    it.configurator.apply(TalonFXConfiguration().apply(block))
+}
+
+fun <K : SIKey> falconFX(
+    talonFX: TalonFX,
+    model: NativeUnitModel<K>,
+    config: TalonFXConfiguration,
     block: FalconFX<K>.() -> Unit,
-) = FalconFX(id, model).also(block)
+) = FalconFX(talonFX, model).also {
+    it.configurator.apply(config)
+}.also(block)

@@ -48,7 +48,7 @@ fun Rectangle2d(
     )
 }
 
-data class Rectangle2d constructor(
+data class Rectangle2d(
     val x: SIUnit<Meter>,
     val y: SIUnit<Meter>,
     val w: SIUnit<Meter>,

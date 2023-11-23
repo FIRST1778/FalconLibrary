@@ -12,7 +12,7 @@ import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.Second
 import org.ghrobotics.lib.mathematics.units.seconds
 
-class DeltaTime constructor(startTime: SIUnit<Second> = (-1.0).seconds) {
+class DeltaTime(startTime: SIUnit<Second> = (-1.0).seconds) {
 
     var currentTime = startTime
         private set

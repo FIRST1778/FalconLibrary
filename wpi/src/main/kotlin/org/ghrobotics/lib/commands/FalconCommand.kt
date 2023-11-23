@@ -8,10 +8,10 @@
 
 package org.ghrobotics.lib.commands
 
-import edu.wpi.first.wpilibj2.command.CommandBase
+import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Subsystem
 
-abstract class FalconCommand(vararg requirements: Subsystem) : CommandBase() {
+abstract class FalconCommand(vararg requirements: Subsystem) : Command() {
     init {
         addRequirements(*requirements)
     }

@@ -16,7 +16,7 @@ import org.ghrobotics.lib.mathematics.twodim.geometry.Rectangle2d
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.derived.LinearVelocity
 
-class VelocityLimitRegionConstraint constructor(
+class VelocityLimitRegionConstraint(
     val region: Rectangle2d,
     val velocityLimit: SIUnit<LinearVelocity>,
 ) : TrajectoryConstraint {

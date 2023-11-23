@@ -10,4 +10,4 @@ package org.ghrobotics.lib.junction
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
-annotation class AutoLog()
+annotation class AutoLog

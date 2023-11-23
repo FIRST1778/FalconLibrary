@@ -8,16 +8,17 @@
 
 package org.ghrobotics.lib.motors.ctre
 
-import com.ctre.phoenix.motorcontrol.IMotorController
+import com.ctre.phoenix6.configs.FeedbackConfigs
+import com.ctre.phoenix6.hardware.core.CoreTalonFX
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
+import org.ghrobotics.lib.mathematics.units.derived.Velocity
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnit
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitVelocity
 import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
-import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnitsPer100ms
 import org.ghrobotics.lib.motors.AbstractFalconEncoder
-import kotlin.math.roundToInt
+import kotlin.math.abs
 import kotlin.properties.Delegates
 
 /**
@@ -28,24 +29,43 @@ import kotlin.properties.Delegates
  * @param model The native unit model.
  */
 class FalconCTREEncoder<K : SIKey>(
-    private val motorController: IMotorController,
-    private val pidIdx: Int = 0,
+    private val motorController: CoreTalonFX,
     model: NativeUnitModel<K>,
 ) : AbstractFalconEncoder<K>(model) {
     /**
      * Returns the raw velocity from the encoder.
      */
-    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = motorController.getSelectedSensorVelocity(pidIdx).nativeUnitsPer100ms
+    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = model.toNativeUnitVelocity(SIUnit(motorController.position.value))
 
     /**
      * Returns the raw position from the encoder.
      */
-    override val rawPosition: SIUnit<NativeUnit> get() = motorController.getSelectedSensorPosition(pidIdx).nativeUnits
+    override val rawPosition: SIUnit<NativeUnit> get() = model.toNativeUnitPosition(SIUnit(motorController.position.value))
+
+    override val velocity: SIUnit<Velocity<K>>
+        get() = SIUnit(motorController.velocity.value)
+
+    override val position: SIUnit<K>
+        get() = SIUnit(motorController.position.value)
 
     /**
      * Sets the encoder phase for the encoder.
      */
-    var encoderPhase by Delegates.observable(false) { _, _, newValue -> motorController.setSensorPhase(newValue) }
+    var encoderPhase by Delegates.observable<Boolean>(false) { _, _, newValue ->
+        motorController.configurator.apply(
+            FeedbackConfigs().apply {
+                SensorToMechanismRatio = abs(SensorToMechanismRatio) * if (newValue) -1 else 1
+            },
+        )
+    }
+
+    init {
+        motorController.configurator.apply(
+            FeedbackConfigs().apply {
+                SensorToMechanismRatio = model.fromNativeUnitPosition(1.0.nativeUnits).value
+            },
+        )
+    }
 
     /**
      * Resets the encoder position to a certain value.
@@ -53,6 +73,6 @@ class FalconCTREEncoder<K : SIKey>(
      * @param newPosition The position to reset to.
      */
     override fun resetPositionRaw(newPosition: SIUnit<NativeUnit>) {
-        motorController.setSelectedSensorPosition(newPosition.value.roundToInt().toDouble(), pidIdx, 0)
+        motorController.setPosition(model.fromNativeUnitPosition(newPosition).value)
     }
 }

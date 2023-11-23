@@ -27,7 +27,7 @@ open class Rotation2d {
         radians_ = radians
     }
 
-    constructor() : this(1.0, 0.0, 0.0) {}
+    constructor() : this(1.0, 0.0, 0.0)
     constructor(radians: Double, normalize: Boolean) {
         var radians = radians
         if (normalize) {
@@ -61,7 +61,7 @@ open class Rotation2d {
         radians_ = other.radians_
     }
 
-    constructor(direction: Translation2d, normalize: Boolean) : this(direction.x(), direction.y(), normalize) {}
+    constructor(direction: Translation2d, normalize: Boolean) : this(direction.x(), direction.y(), normalize)
 
     fun cos(): Double {
         ensureTrigComputed()
