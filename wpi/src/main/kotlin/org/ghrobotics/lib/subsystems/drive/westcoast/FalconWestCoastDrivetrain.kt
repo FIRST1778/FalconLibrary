@@ -213,7 +213,7 @@ abstract class FalconWestCoastDrivetrain : TrajectoryTrackerWestCoastDriveBase()
      * @return The pose at the specified timestamp.
      */
     fun getPose(timestamp: SIUnit<Second> = Timer.getFPGATimestamp().seconds): Pose2d {
-        return poseBuffer[timestamp] ?: kotlin.run {
+        return poseBuffer[timestamp] ?: run {
             DriverStation.reportError("[FalconWCD] Pose Buffer is Empty!", false)
             Pose2d()
         }
