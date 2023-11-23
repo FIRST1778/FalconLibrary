@@ -12,7 +12,6 @@ import com.pathplanner.lib.commands.FollowPathCommand
 import com.pathplanner.lib.commands.PathfindThenFollowPathHolonomic
 import com.pathplanner.lib.path.GoalEndState
 import com.pathplanner.lib.path.PathPlannerPath
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig
 import com.pathplanner.lib.util.ReplanningConfig
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
@@ -44,7 +43,6 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
 
     abstract val motorOutputLimiter: Source<Double>
 
-
     val field = Field2d()
     private val fieldTab = Shuffleboard.getTab("Field")
 
@@ -53,21 +51,21 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
     fun navigateToPose(pose: Pose2d) = PathfindThenFollowPathHolonomic(
         PathPlannerPath(PathPlannerPath.bezierFromPoses(pose), pathConstraints, GoalEndState(0.0, pose.rotation)),
         pathConstraints,
-        swerveDriveInputs::robotPose,
+        ::robotPosition,
         swerveDriveInputs::chassisSpeeds,
         ::setOutputSI,
         pathFollowingConfig,
-        this
+        this,
     )
 
     fun follow(path: PathPlannerPath) = FollowPathCommand(
         path,
-        swerveDriveInputs::robotPose,
+        ::robotPosition,
         swerveDriveInputs::chassisSpeeds,
         ::setOutputSI,
         controller,
         ReplanningConfig(),
-        this
+        this,
     )
 
     fun resetPosition(newPose: Pose2d) {
