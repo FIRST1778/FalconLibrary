@@ -15,7 +15,6 @@ import com.pathplanner.lib.util.ReplanningConfig
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.ChassisSpeeds
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import org.ghrobotics.lib.commands.FalconSubsystem
@@ -29,7 +28,6 @@ import org.ghrobotics.lib.utils.Source
 
 abstract class TrajectoryTrackerSwerveDriveBase : FalconSubsystem() {
     abstract val controller: PPHolonomicDriveController
-    abstract val kinematics: SwerveDriveKinematics
     abstract val pathConstraints: PathConstraints
     abstract val pathFollowingConfig: HolonomicPathFollowerConfig
 
@@ -47,10 +45,6 @@ abstract class TrajectoryTrackerSwerveDriveBase : FalconSubsystem() {
     var robotPosition: Pose2d = Pose2d()
 
     abstract fun setOutputSI(
-        states: Array<SwerveModuleState>,
-    )
-
-    abstract fun setOutputSI(
         speeds: ChassisSpeeds,
     )
 }
@@ -58,7 +52,7 @@ abstract class TrajectoryTrackerSwerveDriveBase : FalconSubsystem() {
 interface SwerveDriveIO {
 
     fun <T : AbstractSwerveDriveInputs> updateInputs(inputs: T)
-    fun setModuleStates(states: Array<SwerveModuleState>)
+    fun setChassisSpeeds(chassisSpeeds: ChassisSpeeds)
     fun setNeutral()
 
     val positions: Array<SwerveModulePosition>

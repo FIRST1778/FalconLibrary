@@ -88,17 +88,8 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
         swerveDriveIO.setNeutral()
     }
 
-    override fun setOutputSI(
-        states: Array<SwerveModuleState>,
-    ) {
-        swerveDriveIO.setModuleStates(states)
-    }
-
     override fun setOutputSI(speeds: ChassisSpeeds) {
-        kinematics.toSwerveModuleStates(speeds).let {
-            SwerveDriveKinematics.desaturateWheelSpeeds(it, maxSpeed.value)
-            swerveDriveIO.setModuleStates(it)
-        }
+        swerveDriveIO.setChassisSpeeds(speeds)
     }
 
     fun swerveDrive(forwardInput: Double, strafeInput: Double, rotationInput: Double, fieldRelative: Boolean = true) {
@@ -110,9 +101,7 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
             rotationInput * outputLimiter * .75,
             fieldRelative,
         )
-        val states = kinematics.toSwerveModuleStates(speeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxSpeed.value)
-        swerveDriveIO.setModuleStates(states)
+        swerveDriveIO.setChassisSpeeds(speeds)
     }
 
     val List<AbstractFalconSwerveModule<*, *>>.positions: List<SwerveModulePosition>

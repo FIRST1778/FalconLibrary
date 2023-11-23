@@ -8,12 +8,9 @@
 
 package org.ghrobotics.lib.subsystems.drive
 
-import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.ChassisSpeeds
-import edu.wpi.first.wpilibj.RobotBase
 import org.ghrobotics.lib.mathematics.max
 import org.ghrobotics.lib.subsystems.drive.swerve.FalconSwerveDrivetrain
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.withSign
 
@@ -142,35 +139,13 @@ class FalconDriveHelper {
         vy: Double,
         rotationInput: Double,
         fieldRelative: Boolean = true,
-        clampAcceleration: Boolean = false,
     ): ChassisSpeeds {
         // Get Current Robot Speed
-        val currentChassisSpeeds = drivetrain.kinematics.toChassisSpeeds(
-            *drivetrain.swerveDriveIO.states,
-        )
         return ChassisSpeeds.fromFieldRelativeSpeeds(
-            if (clampAcceleration && abs(vx - currentChassisSpeeds.vxMetersPerSecond) > kMaxAcceleration) {
-                (
-                    currentChassisSpeeds.vxMetersPerSecond + kMaxAcceleration.withSign(
-                        vx - currentChassisSpeeds.vxMetersPerSecond,
-                    )
-                    )
-            } else {
-                vx
-            },
-            if (clampAcceleration && abs(vy - currentChassisSpeeds.vyMetersPerSecond) > kMaxAcceleration) {
-                (
-                    currentChassisSpeeds.vyMetersPerSecond + kMaxAcceleration.withSign(
-                        vy - currentChassisSpeeds.vyMetersPerSecond,
-                    )
-                    )
-            } else {
-                vy
-            },
+            vx,
+            vy,
             rotationInput,
-            if (RobotBase.isReal()) {
-                drivetrain.robotPosition.rotation
-            } else Rotation2d.fromDegrees(0.0),
+            drivetrain.robotPosition.rotation,
         )
     }
 
