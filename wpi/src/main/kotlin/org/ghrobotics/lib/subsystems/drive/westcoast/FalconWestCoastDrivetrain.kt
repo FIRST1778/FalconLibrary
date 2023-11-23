@@ -213,10 +213,10 @@ abstract class FalconWestCoastDrivetrain : TrajectoryTrackerWestCoastDriveBase()
      * @return The pose at the specified timestamp.
      */
     fun getPose(timestamp: SIUnit<Second> = Timer.getFPGATimestamp().seconds): Pose2d {
-        return poseBuffer[timestamp] ?: {
+        return poseBuffer[timestamp] ?: run {
             DriverStation.reportError("[FalconWCD] Pose Buffer is Empty!", false)
             Pose2d()
-        }()
+        }
     }
 
     /**
@@ -322,7 +322,7 @@ abstract class FalconWestCoastDrivetrain : TrajectoryTrackerWestCoastDriveBase()
      */
     protected sealed class Output {
         // No outputs
-        object Nothing : Output()
+        data object Nothing : Output()
 
         // Percent Output
         class Percent(val left: Double, val right: Double) : Output()

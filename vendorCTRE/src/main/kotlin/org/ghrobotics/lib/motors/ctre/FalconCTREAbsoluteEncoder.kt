@@ -8,31 +8,40 @@
 
 package org.ghrobotics.lib.motors.ctre
 
-import com.ctre.phoenix.motorcontrol.FeedbackDevice
-import com.ctre.phoenix.motorcontrol.can.TalonSRX
+import com.ctre.phoenix6.configs.FeedbackConfigs
+import com.ctre.phoenix6.hardware.TalonFX
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue
 import edu.wpi.first.util.sendable.SendableBuilder
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.derived.Radian
+import org.ghrobotics.lib.mathematics.units.derived.Velocity
 import org.ghrobotics.lib.mathematics.units.derived.radians
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnit
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitVelocity
 import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
-import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnitsPer100ms
 import org.ghrobotics.lib.motors.AbstractFalconAbsoluteEncoder
 
 class FalconCTREAbsoluteEncoder(
-    private val canTalonSRX: TalonSRX,
+    private val canTalonFX: TalonFX,
+    sensorType: FeedbackSensorSourceValue,
     model: NativeUnitModel<Radian>,
     var offset: SIUnit<Radian> = 0.0.radians,
 ) : AbstractFalconAbsoluteEncoder<Radian>(model) {
 
     init {
-        canTalonSRX.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute)
+        canTalonFX.configurator.apply(
+            FeedbackConfigs().withFeedbackSensorSource(
+                sensorType,
+            ).withSensorToMechanismRatio(
+                model.fromNativeUnitPosition(1.nativeUnits).value,
+            ),
+        )
     }
 
-    constructor(id: Int, model: NativeUnitModel<Radian>, offset: SIUnit<Radian> = 0.0.radians) : this(
-        TalonSRX(id),
+    constructor(id: Int, model: NativeUnitModel<Radian>, sensorType: FeedbackSensorSourceValue, offset: SIUnit<Radian> = 0.0.radians) : this(
+        TalonFX(id),
+        sensorType,
         model,
         offset,
     )
@@ -40,9 +49,15 @@ class FalconCTREAbsoluteEncoder(
     override val absolutePosition: SIUnit<Radian>
         get() = position + offset
     override val rawPosition: SIUnit<NativeUnit>
-        get() = canTalonSRX.selectedSensorPosition.nativeUnits
+        get() = model.toNativeUnitPosition(SIUnit(canTalonFX.position.value))
     override val rawVelocity: SIUnit<NativeUnitVelocity>
-        get() = canTalonSRX.selectedSensorVelocity.nativeUnitsPer100ms
+        get() = model.toNativeUnitVelocity(SIUnit(canTalonFX.velocity.value))
+
+    override val velocity: SIUnit<Velocity<Radian>>
+        get() = SIUnit(canTalonFX.velocity.value)
+
+    override val position: SIUnit<Radian>
+        get() = SIUnit(canTalonFX.position.value)
 
     override fun resetPositionRaw(newPosition: SIUnit<NativeUnit>) {
         offset = model.fromNativeUnitPosition(newPosition)
@@ -53,9 +68,9 @@ class FalconCTREAbsoluteEncoder(
     }
 
     var inverted: Boolean
-        get() = canTalonSRX.inverted
+        get() = canTalonFX.inverted
         set(v) {
-            canTalonSRX.inverted = v
+            canTalonFX.inverted = v
         }
 
     override fun initSendable(builder: SendableBuilder?) {

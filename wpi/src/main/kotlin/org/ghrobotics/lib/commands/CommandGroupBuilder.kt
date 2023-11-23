@@ -9,7 +9,6 @@
 package org.ghrobotics.lib.commands
 
 import edu.wpi.first.wpilibj2.command.Command
-import edu.wpi.first.wpilibj2.command.CommandBase
 import edu.wpi.first.wpilibj2.command.ConditionalCommand
 import edu.wpi.first.wpilibj2.command.InstantCommand
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup
@@ -17,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup
 import org.ghrobotics.lib.utils.Source
-import java.util.function.BooleanSupplier
 
 fun sequential(block: BasicCommandGroupBuilder.() -> Unit) =
     commandGroup(BasicCommandGroupBuilder.Type.Sequential, block)
@@ -41,7 +39,7 @@ private fun parallelDeadlineGroup(deadline: Command, block: ParallelDeadlineGrou
     ParallelDeadlineGroupBuilder(deadline).apply(block).build()
 
 interface CommandGroupBuilder {
-    fun build(): CommandBase
+    fun build(): Command
 }
 
 class BasicCommandGroupBuilder(private val type: Type) : CommandGroupBuilder {
@@ -50,7 +48,7 @@ class BasicCommandGroupBuilder(private val type: Type) : CommandGroupBuilder {
 
     operator fun Command.unaryPlus() = commands.add(this)
 
-    override fun build(): CommandBase {
+    override fun build(): Command {
         return when (type) {
             Type.Sequential -> SequentialCommandGroup(*commands.toTypedArray())
             Type.Parallel -> ParallelCommandGroup(*commands.toTypedArray())
@@ -91,9 +89,9 @@ class StateCommandGroupBuilder<T>(private val state: Source<T>) :
     override fun build() =
         SequentialCommandGroup(
             *stateMap.entries.map { (key, command) ->
-                ConditionalCommand(command, InstantCommand(), BooleanSupplier { state() == key })
+                ConditionalCommand(command, InstantCommand()) { state() == key }
             }.toTypedArray(),
         )
 }
 
-infix fun CommandBase.S3ND(other: Any) = this.schedule()
+infix fun Command.S3ND(other: Any) = this.schedule()

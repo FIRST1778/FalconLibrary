@@ -13,7 +13,7 @@ import edu.wpi.first.util.sendable.Sendable
 import edu.wpi.first.wpilibj.* // ktlint-disable no-wildcard-imports
 import edu.wpi.first.wpilibj.shuffleboard.* // ktlint-disable no-wildcard-imports
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
-import edu.wpi.first.wpilibj2.command.CommandBase
+import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.PIDCommand
 import org.ghrobotics.lib.utils.Source
 
@@ -171,7 +171,7 @@ class ShuffleboardTabBuilder(name: String) {
             .apply(block)
             .build()
 
-    fun command(name: String, value: CommandBase, block: ShuffleboardComplexWidgetBuilder.() -> Unit) =
+    fun command(name: String, value: Command, block: ShuffleboardComplexWidgetBuilder.() -> Unit) =
         ShuffleboardComplexWidgetBuilder(tab.add(name, value).withWidget(BuiltInWidgets.kCommand))
             .apply(block)
             .build()

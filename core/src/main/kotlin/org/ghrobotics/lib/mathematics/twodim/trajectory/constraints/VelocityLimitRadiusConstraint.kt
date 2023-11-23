@@ -15,7 +15,7 @@ import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.derived.LinearVelocity
 
-class VelocityLimitRadiusConstraint constructor(
+class VelocityLimitRadiusConstraint(
     val point: Translation2d,
     val radius: SIUnit<Meter>,
     val velocityLimit: SIUnit<LinearVelocity>,
