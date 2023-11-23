@@ -37,18 +37,21 @@ abstract class TrajectoryTrackerSwerveDriveBase : FalconSubsystem() {
      * The replanning configuration. Defaults to no replanning. override to change
      */
     val replanningConfig: ReplanningConfig = ReplanningConfig()
+
     /**
      * The current inputs and outputs
      */
     abstract val swerveDriveIO: SwerveDriveIO
     abstract val swerveDriveInputs: AbstractSwerveDriveInputs
 
+    val robotPosition get() = swerveDriveInputs.robotPosition
+
     abstract fun setOutputSI(
         states: Array<SwerveModuleState>,
     )
 
     abstract fun setOutputSI(
-        speeds: ChassisSpeeds
+        speeds: ChassisSpeeds,
     )
 }
 
@@ -96,7 +99,7 @@ interface AbstractSwerveDriveInputs {
     var rightBackFeedforward: SIUnit<Volt>
     var leftBackFeedforward: SIUnit<Volt>
 
-    var robotPose: Pose2d
+    var robotPosition: Pose2d
 
     var chassisSpeeds: ChassisSpeeds
 

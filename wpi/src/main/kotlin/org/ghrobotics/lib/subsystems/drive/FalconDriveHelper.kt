@@ -169,7 +169,7 @@ class FalconDriveHelper {
             },
             rotationInput,
             if (RobotBase.isReal()) {
-                drivetrain.robotPosition.rotation
+                drivetrain.swerveDriveInputs.robotPosition.rotation
             } else Rotation2d.fromDegrees(0.0),
         )
     }
