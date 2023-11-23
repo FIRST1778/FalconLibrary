@@ -69,15 +69,25 @@ interface SwerveDriveIO {
 }
 
 interface AbstractSwerveDriveInputs {
-    var leftFrontVoltage: SIUnit<Volt>
-    var rightFrontVoltage: SIUnit<Volt>
-    var rightBackVoltage: SIUnit<Volt>
-    var leftBackVoltage: SIUnit<Volt>
+    var leftFrontDriveVoltage: SIUnit<Volt>
+    var rightFrontDriveVoltage: SIUnit<Volt>
+    var rightBackDriveVoltage: SIUnit<Volt>
+    var leftBackDriveVoltage: SIUnit<Volt>
 
-    var leftFrontCurrent: SIUnit<Ampere>
-    var rightFrontCurrent: SIUnit<Ampere>
-    var rightBackCurrent: SIUnit<Ampere>
-    var leftBackCurrent: SIUnit<Ampere>
+    var leftFrontDriveCurrent: SIUnit<Ampere>
+    var rightFrontDriveCurrent: SIUnit<Ampere>
+    var rightBackDriveCurrent: SIUnit<Ampere>
+    var leftBackDriveCurrent: SIUnit<Ampere>
+
+    var leftFrontSteerVoltage: SIUnit<Volt>
+    var rightFrontSteerVoltage: SIUnit<Volt>
+    var rightBackSteerVoltage: SIUnit<Volt>
+    var leftBackSteerVoltage: SIUnit<Volt>
+
+    var leftFrontSteerCurrent: SIUnit<Ampere>
+    var rightFrontSteerCurrent: SIUnit<Ampere>
+    var rightBackSteerCurrent: SIUnit<Ampere>
+    var leftBackSteerCurrent: SIUnit<Ampere>
 
     var leftFrontPosition: SIUnit<Meter>
     var rightFrontPosition: SIUnit<Meter>
@@ -98,6 +108,9 @@ interface AbstractSwerveDriveInputs {
     var rightFrontFeedforward: SIUnit<Volt>
     var rightBackFeedforward: SIUnit<Volt>
     var leftBackFeedforward: SIUnit<Volt>
+
+    var states: List<SwerveModuleState>
+    var desiredStates: List<SwerveModuleState>
 
     var chassisSpeeds: ChassisSpeeds
 
