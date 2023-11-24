@@ -110,6 +110,7 @@ interface AbstractSwerveDriveInputs {
     var desiredStates: List<SwerveModuleState>
 
     var chassisSpeeds: ChassisSpeeds
+    var desiredChassisSpeeds: ChassisSpeeds
 
     var gyroRaw: SIUnit<Radian>
 }
