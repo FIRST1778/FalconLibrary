@@ -9,6 +9,7 @@
 package org.ghrobotics.lib
 
 import com.revrobotics.CANSparkMaxLowLevel
+import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.util.sendable.Sendable
@@ -89,24 +90,25 @@ class FalconNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConst
     }
 
     override fun setState(state: SwerveModuleState, arbitraryFeedForward: SIUnit<Volt>) {
-        var setAngle = state.angle.radians % (2 * Math.PI)
-        var voltage = (state.speedMetersPerSecond / swerveModuleConstants.kDriveMaxSpeed) * maxVoltage
-        if (setAngle < 0.0) setAngle += 2.0 * Math.PI
-
-        var diff = setAngle - stateAngle()
-        if (diff >= PI) {
-            setAngle -= 2.0 * PI
-        } else if (diff < -PI) {
-            setAngle += 2.0 * PI
-        }
-        diff = setAngle - stateAngle()
-        if (diff > PI / 2.0 || diff < -PI / 2.0) {
-            setAngle += PI
-            voltage *= -1
-        }
-
-        setAngle %= 2.0 * PI
-        if (setAngle < 0.0) setAngle += 2.0 * PI
+        val state = SwerveModuleState.optimize(state, Rotation2d(encoder.position.value))
+        val setAngle = state.angle.radians % (2 * Math.PI)
+        val voltage = (state.speedMetersPerSecond / swerveModuleConstants.kDriveMaxSpeed) * maxVoltage
+//        if (setAngle < 0.0) setAngle += 2.0 * Math.PI
+//
+//        var diff = setAngle - stateAngle()
+//        if (diff >= PI) {
+//            setAngle -= 2.0 * PI
+//        } else if (diff < -PI) {
+//            setAngle += 2.0 * PI
+//        }
+//        diff = setAngle - stateAngle()
+//        if (diff > PI / 2.0 || diff < -PI / 2.0) {
+//            setAngle += PI
+//            voltage *= -1
+//        }
+//
+//        setAngle %= 2.0 * PI
+//        if (setAngle < 0.0) setAngle += 2.0 * PI
 
         setVoltage(voltage)
         setAngle(setAngle)
