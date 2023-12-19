@@ -31,7 +31,7 @@ class FalconNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConst
 
     override var driveMotor = with(swerveModuleConstants) {
         falconMAX(
-            kDriveTalonId,
+            kDriveId,
             CANSparkMaxLowLevel.MotorType.kBrushless,
             kDriveNativeUnitModel,
         ) {
@@ -48,7 +48,7 @@ class FalconNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConst
     }
     override var azimuthMotor = with(swerveModuleConstants) {
         falconMAX(
-            kAzimuthTalonId,
+            kAzimuthId,
             CANSparkMaxLowLevel.MotorType.kBrushless,
             kAzimuthNativeUnitModel,
         ) {
