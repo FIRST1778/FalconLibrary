@@ -8,6 +8,8 @@
 
 package org.ghrobotics.lib
 
+import com.ctre.phoenix6.signals.InvertedValue
+import com.ctre.phoenix6.signals.NeutralModeValue
 import com.revrobotics.CANSparkMaxLowLevel
 import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.amps
@@ -15,13 +17,15 @@ import org.ghrobotics.lib.mathematics.units.derived.Radian
 import org.ghrobotics.lib.mathematics.units.derived.volts
 import org.ghrobotics.lib.motors.AbstractFalconAbsoluteEncoder
 import org.ghrobotics.lib.motors.ctre.FalconCanCoder
+import org.ghrobotics.lib.motors.ctre.FalconFX
+import org.ghrobotics.lib.motors.ctre.falconFX
 import org.ghrobotics.lib.motors.rev.FalconMAX
 import org.ghrobotics.lib.motors.rev.falconMAX
 import org.ghrobotics.lib.subsystems.drive.swerve.FalconSwerveModule
 import org.ghrobotics.lib.subsystems.drive.swerve.SwerveModuleConstants
 
-class FalconNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConstants) :
-    FalconSwerveModule<FalconMAX<Meter>, FalconMAX<Radian>>(swerveModuleConstants) {
+class FalconTalonNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConstants) :
+    FalconSwerveModule<FalconFX<Meter>, FalconMAX<Radian>>(swerveModuleConstants) {
 
     override var encoder: AbstractFalconAbsoluteEncoder<Radian> = FalconCanCoder(
         swerveModuleConstants.kCanCoderId,
@@ -30,22 +34,23 @@ class FalconNeoSwerveModule(private val swerveModuleConstants: SwerveModuleConst
     )
 
     override var driveMotor = with(swerveModuleConstants) {
-        falconMAX(
+        falconFX(
             kDriveTalonId,
-            CANSparkMaxLowLevel.MotorType.kBrushless,
             kDriveNativeUnitModel,
         ) {
-            outputInverted = kInvertDrive
-            brakeMode = kDriveBrakeMode
-            voltageCompSaturation = 12.volts
-            smartCurrentLimit = 40.amps
-            canSparkMax.run {
-                setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 100)
-                setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus1, 20)
-                setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 20)
-            }
+            withMotorOutput(
+                MotorOutput
+                    .withInverted(if (kInvertDrive) InvertedValue.CounterClockwise_Positive else InvertedValue.Clockwise_Positive)
+                    .withNeutralMode(if (kDriveBrakeMode) NeutralModeValue.Brake else NeutralModeValue.Coast),
+            )
+            withCurrentLimits(
+                CurrentLimits.withSupplyCurrentLimit(
+                    40.0,
+                ),
+            )
         }
     }
+
     override var azimuthMotor = with(swerveModuleConstants) {
         falconMAX(
             kAzimuthTalonId,
