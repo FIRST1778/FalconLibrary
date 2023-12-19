@@ -19,8 +19,8 @@ import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
 
 class SwerveModuleConstants {
     var kName = "Name"
-    var kDriveTalonId = -1
-    var kAzimuthTalonId = -1
+    var kDriveId = -1
+    var kAzimuthId = -1
     var kCanCoderId = -1
 
     var kCanCoderNativeUnitModel = NativeUnitRotationModel(2048.nativeUnits)
