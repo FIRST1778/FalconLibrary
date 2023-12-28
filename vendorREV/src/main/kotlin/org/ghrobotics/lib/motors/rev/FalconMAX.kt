@@ -12,6 +12,7 @@ import com.revrobotics.CANSparkMax
 import com.revrobotics.CANSparkMaxLowLevel
 import com.revrobotics.SparkMaxPIDController
 import org.ghrobotics.lib.mathematics.units.Ampere
+import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.amps
@@ -23,6 +24,7 @@ import org.ghrobotics.lib.mathematics.units.inAmps
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.motors.AbstractFalconMotor
 import org.ghrobotics.lib.motors.FalconMotor
+import org.ghrobotics.lib.subsystems.drive.swerve.SwerveModuleConstants
 import kotlin.properties.Delegates
 
 /**
@@ -228,13 +230,62 @@ class FalconMAX<K : SIKey>(
      *
      * @param motor The other motor controller.
      */
-    override fun follow(motor: FalconMotor<*>): Boolean =
-        if (motor is FalconMAX<*>) {
-            canSparkMax.follow(motor.canSparkMax)
-            true
-        } else {
-            super.follow(motor)
+    override fun follow(motor: FalconMotor<*>): Boolean = if (motor is FalconMAX<*>) {
+        canSparkMax.follow(motor.canSparkMax)
+        true
+    } else {
+        super.follow(motor)
+    }
+
+    companion object {
+        fun fromSwerveConstantsDrive(swerveModuleConstants: SwerveModuleConstants): FalconMAX<Meter> =
+            with(swerveModuleConstants) {
+                falconMAX(
+                    kDriveId,
+                    CANSparkMaxLowLevel.MotorType.kBrushless,
+                    kDriveNativeUnitModel,
+                ) {
+                    outputInverted = kInvertDrive
+                    brakeMode = kDriveBrakeMode
+                    voltageCompSaturation = 12.volts
+                    smartCurrentLimit = 40.amps
+                    controller.run {
+                        p = swerveModuleConstants.kDriveKp
+                    }
+                    canSparkMax.run {
+                        setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 100)
+                        setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus1, 20)
+                        setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 20)
+                    }
+                }
+            }
+
+        fun fromSwerveConstantsAzimuth(swerveModuleConstants: SwerveModuleConstants) = with(swerveModuleConstants) {
+            falconMAX(
+                kAzimuthId,
+                CANSparkMaxLowLevel.MotorType.kBrushless,
+                kAzimuthNativeUnitModel,
+            ) {
+                outputInverted = kInvertAzimuth
+                brakeMode = kAzimuthBrakeMode
+                canSparkMax.run {
+                    setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 100)
+                    setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus1, 20)
+                    setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 20)
+                }
+                voltageCompSaturation = 12.volts
+                smartCurrentLimit = kAzimuthCurrentLimit.amps
+                controller.run {
+                    ff = kAzimuthKf
+                    p = kAzimuthKp
+                    i = kAzimuthKi
+                    d = kAzimuthKd
+                    iZone = kAzimuthIZone
+                    setFeedbackDevice(canSparkMax.encoder)
+                }
+            }
         }
+    }
 }
 
 fun <K : SIKey> falconMAX(

@@ -24,6 +24,7 @@ import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitVelocity
 import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
 import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnitsPer100ms
 import org.ghrobotics.lib.motors.AbstractFalconAbsoluteEncoder
+import org.ghrobotics.lib.subsystems.drive.swerve.SwerveModuleConstants
 import kotlin.math.PI
 
 class FalconCanCoder<K : SIKey>(
@@ -35,8 +36,7 @@ class FalconCanCoder<K : SIKey>(
     private val canCoder = CANcoder(canId).apply {
         configurator.apply(
             CANcoderConfiguration().withMagnetSensor(
-                MagnetSensorConfigs()
-                    .withMagnetOffset(Math.toDegrees(offsetAngle)),
+                MagnetSensorConfigs().withMagnetOffset(Math.toDegrees(offsetAngle)),
             ),
         )
     }
@@ -60,5 +60,15 @@ class FalconCanCoder<K : SIKey>(
             { },
 
         )
+    }
+
+    companion object {
+        fun fromSwerveConstants(swerveModuleConstants: SwerveModuleConstants): FalconCanCoder<Radian> {
+            return FalconCanCoder(
+                swerveModuleConstants.kCanCoderId,
+                swerveModuleConstants.kCanCoderNativeUnitModel,
+                swerveModuleConstants.kAzimuthEncoderHomeOffset,
+            )
+        }
     }
 }

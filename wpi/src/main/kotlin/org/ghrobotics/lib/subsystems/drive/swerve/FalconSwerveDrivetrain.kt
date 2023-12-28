@@ -102,7 +102,7 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
         swerveDriveIO.setChassisSpeeds(speeds)
     }
 
-    val List<FalconSwerveModule<*, *>>.positions: List<SwerveModulePosition>
+    val List<FalconSwerveModule>.positions: List<SwerveModulePosition>
         get() = List(4) {
             SwerveModulePosition(
                 this[it].drivePosition.value,

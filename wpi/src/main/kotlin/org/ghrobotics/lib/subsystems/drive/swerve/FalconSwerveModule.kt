@@ -24,20 +24,32 @@ import org.ghrobotics.lib.mathematics.units.derived.inDegrees
 import org.ghrobotics.lib.mathematics.units.derived.radians
 import org.ghrobotics.lib.mathematics.units.derived.volts
 import org.ghrobotics.lib.motors.AbstractFalconAbsoluteEncoder
-import org.ghrobotics.lib.motors.AbstractFalconMotor
+import org.ghrobotics.lib.motors.FalconMotor
 import kotlin.math.PI
 import kotlin.math.abs
-
-abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFalconMotor<Radian>>(
+class FalconSwerveModule(
+    val driveMotor: FalconMotor<Meter>,
+    val azimuthMotor: FalconMotor<Radian>,
+    val encoder: AbstractFalconAbsoluteEncoder<Radian>,
     private val swerveModuleConstants: SwerveModuleConstants,
 ) : Sendable {
-    abstract val driveMotor: D
-    abstract val azimuthMotor: T
 
-    abstract val encoder: AbstractFalconAbsoluteEncoder<Radian>
+    constructor(
+        driveMotorConfigurator: (SwerveModuleConstants) -> FalconMotor<Meter>,
+        azimuthMotorConfigurator: (SwerveModuleConstants) -> FalconMotor<Radian>,
+        encoderConfigurator: (SwerveModuleConstants) -> AbstractFalconAbsoluteEncoder<Radian>,
+        swerveModuleConstants: SwerveModuleConstants,
+    ) : this(
+        driveMotorConfigurator(swerveModuleConstants),
+        azimuthMotorConfigurator(swerveModuleConstants),
+        encoderConfigurator(swerveModuleConstants),
+        swerveModuleConstants,
+    )
 
     private val feedForward = SimpleMotorFeedforward(
-        swerveModuleConstants.kDriveKs, swerveModuleConstants.kDriveKv, swerveModuleConstants.kDriveKa
+        swerveModuleConstants.kDriveKs,
+        swerveModuleConstants.kDriveKv,
+        swerveModuleConstants.kDriveKa,
     )
 
     private var resetIteration: Int = 500
@@ -45,7 +57,6 @@ abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFa
 
     val name = swerveModuleConstants.kName
     private val maxVoltage = swerveModuleConstants.kDriveMaxVoltage
-
 
     fun setState(state: SwerveModuleState, openLoop: Boolean = false) {
         val state = SwerveModuleState.optimize(state, Rotation2d(encoder.position.value))
@@ -112,13 +123,12 @@ abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFa
     }
 
     fun setSpeed(speed: Double, openLoop: Boolean) {
-        if(openLoop) {
+        if (openLoop) {
             val voltage = (speed / swerveModuleConstants.kDriveMaxSpeed) * maxVoltage
             driveMotor.setVoltage(voltage.volts)
         } else {
             driveMotor.setVelocity(SIUnit(speed), feedForward.calculate(speed).volts)
         }
-
     }
 
     val voltageOutput: SIUnit<Volt> get() = driveMotor.voltageOutput

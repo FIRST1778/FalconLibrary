@@ -22,8 +22,10 @@ import com.ctre.phoenix6.controls.StrictFollower
 import com.ctre.phoenix6.controls.VelocityVoltage
 import com.ctre.phoenix6.controls.VoltageOut
 import com.ctre.phoenix6.hardware.TalonFX
+import com.ctre.phoenix6.signals.InvertedValue
 import com.ctre.phoenix6.signals.NeutralModeValue
 import org.ghrobotics.lib.mathematics.units.Ampere
+import org.ghrobotics.lib.mathematics.units.Meter
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
 import org.ghrobotics.lib.mathematics.units.amps
@@ -35,6 +37,7 @@ import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
 import org.ghrobotics.lib.motors.AbstractFalconMotor
 import org.ghrobotics.lib.motors.FalconMotor
+import org.ghrobotics.lib.subsystems.drive.swerve.SwerveModuleConstants
 import kotlin.properties.Delegates
 
 /**
@@ -213,6 +216,57 @@ class FalconFX<K : SIKey>(
         true
     } else {
         super.follow(motor)
+    }
+
+    companion object {
+        fun fromSwerveConstantsDrive(swerveModuleConstants: SwerveModuleConstants): FalconFX<Meter> =
+            with(swerveModuleConstants) {
+                falconFX(
+                    kDriveId,
+                    kDriveNativeUnitModel,
+                ) {
+                    withMotorOutput(
+                        MotorOutput.withInverted(if (kInvertDrive) InvertedValue.CounterClockwise_Positive else InvertedValue.Clockwise_Positive)
+                            .withNeutralMode(if (kDriveBrakeMode) NeutralModeValue.Brake else NeutralModeValue.Coast),
+                    )
+                    if (kDriveEnableCurrentLimit) {
+                        withCurrentLimits(
+                            CurrentLimits.withSupplyCurrentLimit(
+                                kDriveCurrentLimit,
+                            ),
+                        )
+                    }
+                    withSlot0(
+                        Slot0.withKP(kDriveKp),
+                    )
+                }
+            }
+
+        fun fromSwerveConstantsAzimuth(swerveModuleConstants: SwerveModuleConstants) = with(swerveModuleConstants) {
+            falconFX(
+                kDriveId,
+                kDriveNativeUnitModel,
+            ) {
+                withMotorOutput(
+                    MotorOutput.withInverted(if (kInvertDrive) InvertedValue.CounterClockwise_Positive else InvertedValue.Clockwise_Positive)
+                        .withNeutralMode(if (kDriveBrakeMode) NeutralModeValue.Brake else NeutralModeValue.Coast),
+                )
+                if (kAzimuthEnableCurrentLimit) {
+                    withCurrentLimits(
+                        CurrentLimits.withSupplyCurrentLimit(
+                            kAzimuthCurrentLimit,
+                        ),
+                    )
+                }
+                withSlot0(
+                    Slot0
+                        .withKS(kAzimuthKf)
+                        .withKP(kAzimuthKp)
+                        .withKI(kAzimuthKi)
+                        .withKD(kAzimuthKd),
+                )
+            }
+        }
     }
 }
 

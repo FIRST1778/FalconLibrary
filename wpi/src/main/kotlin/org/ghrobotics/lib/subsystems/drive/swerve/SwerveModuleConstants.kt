@@ -49,11 +49,8 @@ class SwerveModuleConstants {
     var kDriveKa = 0.0
 
     // azimuth current/voltage
-    var kAzimuthContinuousCurrentLimit = 30 // amps
-    var kAzimuthPeakCurrentLimit = 60 // amps
-    var kAzimuthPeakCurrentDuration = 200 // ms
+    var kAzimuthCurrentLimit = 60.0 // amps
     var kAzimuthEnableCurrentLimit = true
-    var kAzimuthMaxVoltage = 10.0 // volts
 
     // general drive
     var kInvertDrive = true
@@ -69,5 +66,4 @@ class SwerveModuleConstants {
     var kDriveCurrentLimit = 50.0 // amps
     var kDriveEnableCurrentLimit = true
     var kDriveMaxVoltage = 11.0 // volts
-
 }
