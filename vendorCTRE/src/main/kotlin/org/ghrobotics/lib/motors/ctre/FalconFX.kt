@@ -228,8 +228,8 @@ fun <K : SIKey> falconFX(
     id: Int,
     model: NativeUnitModel<K>,
     block: TalonFXConfiguration.() -> Unit,
-) = FalconFX(id, model).also {
-    it.configurator.apply(TalonFXConfiguration().apply(block))
+) = FalconFX(id, model).apply {
+    configurator.apply(TalonFXConfiguration().apply(block))
 }
 
 fun <K : SIKey> falconFX(
