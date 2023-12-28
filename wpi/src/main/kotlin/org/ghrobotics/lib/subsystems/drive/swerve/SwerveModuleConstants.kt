@@ -44,40 +44,30 @@ class SwerveModuleConstants {
     var kAzimuthAcceleration = SIUnit<Acceleration<Radian>>(31.26) // 20379 Native Units | 12 * kAzimuthCruiseVelocity
     var kAzimuthClosedLoopAllowableError = 5
 
+    var kDriveKs = 0.0
+    var kDriveKv = 0.0
+    var kDriveKa = 0.0
+
     // azimuth current/voltage
     var kAzimuthContinuousCurrentLimit = 30 // amps
     var kAzimuthPeakCurrentLimit = 60 // amps
     var kAzimuthPeakCurrentDuration = 200 // ms
     var kAzimuthEnableCurrentLimit = true
     var kAzimuthMaxVoltage = 10.0 // volts
-    var kAzimuthVoltageMeasurementFilter = 8 // # of samples in rolling average
-
-    // azimuth measurement
-    var kAzimuthStatusFrame2UpdateRate = 10 // feedback for selected sensor, ms
-    var kAzimuthStatusFrame10UpdateRate = 10 // motion magic, ms// dt for velocity measurements, ms
-    var kAzimuthVelocityMeasurementWindow = 64 // # of samples in rolling average
 
     // general drive
     var kInvertDrive = true
-    var kInvertDriveSensorPhase = false
     var kDriveBrakeMode = true // neutral mode could change
     var kWheelDiameter = 4.0 // Probably should tune for each individual wheel maybe
     var kDriveNativeUnitModel = NativeUnitLengthModel(4096.nativeUnits, kWheelDiameter.inches)
-    var kDriveDeadband = 0.01
+    var kDriveKp = 0.0
 
     // var kDriveMaxSpeed = 10.0
     var kDriveMaxSpeed = 0.0
 
     // drive current/voltage
-    var kDriveContinuousCurrentLimit = 30 // amps
-    var kDrivePeakCurrentLimit = 50 // amps
-    var kDrivePeakCurrentDuration = 200 // ms
+    var kDriveCurrentLimit = 50.0 // amps
     var kDriveEnableCurrentLimit = true
     var kDriveMaxVoltage = 11.0 // volts
-    var kDriveVoltageMeasurementFilter = 8 // # of samples in rolling average
 
-    // drive measurement
-    var kDriveStatusFrame2UpdateRate = 15 // feedback for selected sensor, ms
-    var kDriveStatusFrame10UpdateRate = 200 // motion magic, ms// dt for velocity measurements, ms
-    var kDriveVelocityMeasurementWindow = 64 // # of samples in rolling average
 }

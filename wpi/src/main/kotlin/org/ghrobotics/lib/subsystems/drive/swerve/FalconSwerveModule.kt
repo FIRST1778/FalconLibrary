@@ -8,6 +8,7 @@
 
 package org.ghrobotics.lib.subsystems.drive.swerve
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
@@ -29,12 +30,15 @@ import kotlin.math.abs
 
 abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFalconMotor<Radian>>(
     private val swerveModuleConstants: SwerveModuleConstants,
-) :
-    Sendable {
+) : Sendable {
     abstract val driveMotor: D
     abstract val azimuthMotor: T
 
     abstract val encoder: AbstractFalconAbsoluteEncoder<Radian>
+
+    private val feedForward = SimpleMotorFeedforward(
+        swerveModuleConstants.kDriveKs, swerveModuleConstants.kDriveKv, swerveModuleConstants.kDriveKa
+    )
 
     private var resetIteration: Int = 500
     private var referenceAngle: Double = 0.0
@@ -42,11 +46,11 @@ abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFa
     val name = swerveModuleConstants.kName
     private val maxVoltage = swerveModuleConstants.kDriveMaxVoltage
 
-    fun setState(state: SwerveModuleState, arbitraryFeedForward: SIUnit<Volt>) {
+
+    fun setState(state: SwerveModuleState, openLoop: Boolean = false) {
         val state = SwerveModuleState.optimize(state, Rotation2d(encoder.position.value))
         val setAngle = state.angle.radians % (2 * Math.PI)
-        val voltage = (state.speedMetersPerSecond / swerveModuleConstants.kDriveMaxSpeed) * maxVoltage
-        setVoltage(voltage)
+        setSpeed(state.speedMetersPerSecond, openLoop)
         setAngle(setAngle)
     }
 
@@ -107,8 +111,14 @@ abstract class FalconSwerveModule<D : AbstractFalconMotor<Meter>, T : AbstractFa
         azimuthMotor.setPosition(adjustedReferenceAngleRadians.radians)
     }
 
-    fun setVoltage(voltage: Double) {
-        driveMotor.setVoltage(voltage.volts)
+    fun setSpeed(speed: Double, openLoop: Boolean) {
+        if(openLoop) {
+            val voltage = (speed / swerveModuleConstants.kDriveMaxSpeed) * maxVoltage
+            driveMotor.setVoltage(voltage.volts)
+        } else {
+            driveMotor.setVelocity(SIUnit(speed), feedForward.calculate(speed).volts)
+        }
+
     }
 
     val voltageOutput: SIUnit<Volt> get() = driveMotor.voltageOutput

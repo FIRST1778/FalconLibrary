@@ -43,11 +43,17 @@ class FalconTalonNeoSwerveModule(private val swerveModuleConstants: SwerveModule
                     .withInverted(if (kInvertDrive) InvertedValue.CounterClockwise_Positive else InvertedValue.Clockwise_Positive)
                     .withNeutralMode(if (kDriveBrakeMode) NeutralModeValue.Brake else NeutralModeValue.Coast),
             )
-            withCurrentLimits(
-                CurrentLimits.withSupplyCurrentLimit(
-                    40.0,
-                ),
+            if(swerveModuleConstants.kDriveEnableCurrentLimit) {
+                withCurrentLimits(
+                    CurrentLimits.withSupplyCurrentLimit(
+                        swerveModuleConstants.kDriveCurrentLimit,
+                    ),
+                )
+            }
+            withSlot0(
+                Slot0.withKP(swerveModuleConstants.kDriveKp)
             )
+
         }
     }
 
