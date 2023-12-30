@@ -11,9 +11,11 @@ package org.ghrobotics.lib.motors.rev
 import com.revrobotics.RelativeEncoder
 import org.ghrobotics.lib.mathematics.units.SIKey
 import org.ghrobotics.lib.mathematics.units.SIUnit
+import org.ghrobotics.lib.mathematics.units.derived.Velocity
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnit
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitModel
 import org.ghrobotics.lib.mathematics.units.nativeunit.NativeUnitVelocity
+import org.ghrobotics.lib.mathematics.units.nativeunit.nativeUnits
 import org.ghrobotics.lib.motors.AbstractFalconEncoder
 
 /**
@@ -26,15 +28,33 @@ class FalconMAXEncoder<K : SIKey>(
     val canEncoder: RelativeEncoder,
     model: NativeUnitModel<K>,
 ) : AbstractFalconEncoder<K>(model) {
+
+    init {
+        canEncoder.positionConversionFactor = model.fromNativeUnitPosition(1.0.nativeUnits).value
+        canEncoder.velocityConversionFactor = model.fromNativeUnitVelocity(SIUnit(1.0 / 60.0)).value
+    }
+
     /**
      * Returns the raw velocity from the encoder.
      */
-    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = SIUnit(canEncoder.velocity / 60.0)
+    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = model.toNativeUnitVelocity(SIUnit(canEncoder.velocity))
 
     /**
      * Returns the raw position from the encoder.
      */
-    override val rawPosition: SIUnit<NativeUnit> get() = SIUnit(canEncoder.position)
+    override val rawPosition: SIUnit<NativeUnit> get() = model.toNativeUnitPosition(SIUnit(canEncoder.position))
+
+    /**
+     * Returns the position of the encoder.
+     */
+    override val position: SIUnit<K>
+        get() = SIUnit(canEncoder.position)
+
+    /**
+     * Returns the velocity of the encoder.
+     */
+    override val velocity: SIUnit<Velocity<K>>
+        get() = SIUnit(canEncoder.velocity)
 
     /**
      * Resets the encoder position to a certain value.
@@ -42,6 +62,10 @@ class FalconMAXEncoder<K : SIKey>(
      * @param newPosition The position to reset to.
      */
     override fun resetPositionRaw(newPosition: SIUnit<NativeUnit>) {
+        canEncoder.position = model.fromNativeUnitPosition(newPosition).value
+    }
+
+    override fun resetPosition(newPosition: SIUnit<K>) {
         canEncoder.position = newPosition.value
     }
 }

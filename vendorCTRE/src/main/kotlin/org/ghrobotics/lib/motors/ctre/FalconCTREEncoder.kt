@@ -25,7 +25,6 @@ import kotlin.properties.Delegates
  * Represents the encoder connected to a CTRE motor controller.
  *
  * @param motorController The motor controller.
- * @param pidIdx The PID ID.
  * @param model The native unit model.
  */
 class FalconCTREEncoder<K : SIKey>(
@@ -35,7 +34,7 @@ class FalconCTREEncoder<K : SIKey>(
     /**
      * Returns the raw velocity from the encoder.
      */
-    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = model.toNativeUnitVelocity(SIUnit(motorController.position.value))
+    override val rawVelocity: SIUnit<NativeUnitVelocity> get() = model.toNativeUnitVelocity(SIUnit(motorController.velocity.value))
 
     /**
      * Returns the raw position from the encoder.
