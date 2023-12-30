@@ -61,6 +61,7 @@ class FalconSwerveModule(
     fun setState(state: SwerveModuleState, openLoop: Boolean = false) {
         val state = SwerveModuleState.optimize(state, Rotation2d(encoder.position.value))
         val setAngle = state.angle.radians % (2 * Math.PI)
+        state.speedMetersPerSecond *= Rotation2d(stateAngle() - setAngle).cos
         setSpeed(state.speedMetersPerSecond, openLoop)
         setAngle(setAngle)
     }
