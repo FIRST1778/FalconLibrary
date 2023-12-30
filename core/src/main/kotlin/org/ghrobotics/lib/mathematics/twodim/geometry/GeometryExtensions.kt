@@ -23,21 +23,22 @@ import org.ghrobotics.lib.mathematics.units.derived.toRotation2d
 import org.ghrobotics.lib.mathematics.units.meters
 import kotlin.math.absoluteValue
 
-/* Translation2d Unit-Safe Constructors */
+/** Translation2d Unit-Safe Constructors
+ * JVM Inline SIUnits don't like to place nice with these
+ */
+fun Translation2d(x: SIUnit<Meter>, y: SIUnit<Meter>): Translation2d =
+    edu.wpi.first.math.geometry.Translation2d(x.value, y.value)
 
-fun Translation2d(x: SIUnit<Meter>, y: SIUnit<Meter>) =
-    Translation2d(x.value, y.value)
-
-fun Translation2d(distance: SIUnit<Meter>, angle: Rotation2d) =
+fun Translation2d(distance: SIUnit<Meter>, angle: Rotation2d): Translation2d =
     Translation2d(distance * angle.cos, distance * angle.sin)
 
 /* Pose2d Unit-Safe Constructors */
 
 fun Pose2d(x: SIUnit<Meter>, y: SIUnit<Meter>, angle: Rotation2d) =
-    Pose2d(x.value, y.value, angle)
+    edu.wpi.first.math.geometry.Pose2d(x.value, y.value, angle)
 
 fun Pose2d(x: SIUnit<Meter>, y: SIUnit<Meter>, angle: SIUnit<Radian> = 0.degrees) =
-    Pose2d(x.value, y.value, angle.toRotation2d())
+    edu.wpi.first.math.geometry.Pose2d(x.value, y.value, angle.toRotation2d())
 
 /* Transform2d Unit-Safe Constructors */
 fun Transform2d(x: SIUnit<Meter>, y: SIUnit<Meter>, angle: Rotation2d) =
