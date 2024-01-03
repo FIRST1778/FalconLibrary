@@ -110,8 +110,8 @@ class FalconFX<K : SIKey>(
     override val drawnCurrent: SIUnit<Ampere>
         get() = talonFX.supplyCurrent.value.amps
     override var outputInverted: Boolean
-        get() = TODO("Not yet implemented")
-        set(value) {}
+        get() = talonFX.inverted
+        set(value) { talonFX.inverted = value}
 
     /**
      * The previous demand.
@@ -251,6 +251,10 @@ class FalconFX<K : SIKey>(
                     MotorOutput.withInverted(if (kInvertDrive) InvertedValue.CounterClockwise_Positive else InvertedValue.Clockwise_Positive)
                         .withNeutralMode(if (kDriveBrakeMode) NeutralModeValue.Brake else NeutralModeValue.Coast),
                 )
+                withVoltage(
+                    VoltageConfigs().withPeakForwardVoltage(swerveModuleConstants.kDriveMaxVoltage)
+                        .withPeakReverseVoltage(-swerveModuleConstants.kDriveMaxVoltage)
+                )
                 if (kAzimuthEnableCurrentLimit) {
                     withCurrentLimits(
                         CurrentLimits.withSupplyCurrentLimit(
@@ -259,11 +263,7 @@ class FalconFX<K : SIKey>(
                     )
                 }
                 withSlot0(
-                    Slot0
-                        .withKS(kAzimuthKf)
-                        .withKP(kAzimuthKp)
-                        .withKI(kAzimuthKi)
-                        .withKD(kAzimuthKd),
+                    Slot0.withKS(kAzimuthKf).withKP(kAzimuthKp).withKI(kAzimuthKi).withKD(kAzimuthKd),
                 )
             }
         }

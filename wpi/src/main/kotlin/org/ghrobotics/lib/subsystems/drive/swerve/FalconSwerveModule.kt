@@ -27,6 +27,7 @@ import org.ghrobotics.lib.motors.AbstractFalconAbsoluteEncoder
 import org.ghrobotics.lib.motors.FalconMotor
 import kotlin.math.PI
 import kotlin.math.abs
+
 class FalconSwerveModule(
     val driveMotor: FalconMotor<Meter>,
     val azimuthMotor: FalconMotor<Radian>,
@@ -145,13 +146,16 @@ class FalconSwerveModule(
 
     override fun initSendable(builder: SendableBuilder?) {
         builder!!.run {
-            addDoubleProperty("Absolute Position", {
+            addDoubleProperty("${swerveModuleConstants.kName} Absolute Position", {
                 encoder.absolutePosition.inDegrees()
             }, {})
-            addDoubleProperty("Drive Voltage", {
+            addDoubleProperty("${swerveModuleConstants.kName} Internal Position", {
+                azimuthMotor.encoder.position.value
+            }, {})
+            addDoubleProperty("${swerveModuleConstants.kName} Drive Voltage", {
                 driveMotor.voltageOutput.value
             }, {})
-            addDoubleProperty("State Angle", { stateAngle() }, {})
+            addDoubleProperty("${swerveModuleConstants.kName} State Angle", { stateAngle() }, {})
         }
     }
 }
