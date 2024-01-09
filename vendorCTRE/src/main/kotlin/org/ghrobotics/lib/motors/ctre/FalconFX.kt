@@ -111,7 +111,7 @@ class FalconFX<K : SIKey>(
         get() = talonFX.supplyCurrent.value.amps
     override var outputInverted: Boolean
         get() = talonFX.inverted
-        set(value) { talonFX.inverted = value}
+        set(value) { talonFX.inverted = value }
 
     /**
      * The previous demand.
@@ -253,7 +253,7 @@ class FalconFX<K : SIKey>(
                 )
                 withVoltage(
                     VoltageConfigs().withPeakForwardVoltage(swerveModuleConstants.kDriveMaxVoltage)
-                        .withPeakReverseVoltage(-swerveModuleConstants.kDriveMaxVoltage)
+                        .withPeakReverseVoltage(-swerveModuleConstants.kDriveMaxVoltage),
                 )
                 if (kAzimuthEnableCurrentLimit) {
                     withCurrentLimits(
