@@ -46,23 +46,25 @@ abstract class FalconSwerveDrivetrain : TrajectoryTrackerSwerveDriveBase(), Sens
 
     abstract fun resetPosition(pose: Pose2d, positions: Array<SwerveModulePosition>)
 
-    fun navigateToPose(pose: Pose2d) = PathfindThenFollowPathHolonomic(
+    fun navigateToPose(pose: Pose2d, flip: Boolean = false) = PathfindThenFollowPathHolonomic(
         PathPlannerPath(PathPlannerPath.bezierFromPoses(pose), pathConstraints, GoalEndState(0.0, pose.rotation)),
         pathConstraints,
         ::robotPosition,
         swerveDriveInputs::chassisSpeeds,
         ::setOutputSI,
         pathFollowingConfig,
+        { flip }, // TODO: Look more into this
         this,
     )
 
-    fun follow(path: PathPlannerPath) = FollowPathCommand(
+    fun follow(path: PathPlannerPath, flip: Boolean = false) = FollowPathCommand(
         path,
         ::robotPosition,
         swerveDriveInputs::chassisSpeeds,
         ::setOutputSI,
         controller,
         ReplanningConfig(),
+        { flip }, // TODO: Look more into this
         this,
     )
 
