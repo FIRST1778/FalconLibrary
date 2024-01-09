@@ -24,7 +24,7 @@ import org.ghrobotics.lib.motors.AbstractFalconEncoder
  * @param canEncoder The underlying encoder.
  * @param model The native unit model.
  */
-class FalconMAXEncoder<K : SIKey>(
+class FalconREVEncoder<K : SIKey>(
     val canEncoder: RelativeEncoder,
     model: NativeUnitModel<K>,
 ) : AbstractFalconEncoder<K>(model) {
